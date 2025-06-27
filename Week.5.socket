@@ -1,0 +1,129 @@
+Q-1 Project Setup
+mkdir chat-app && cd chat-app
+npm init -y
+npm install express socket.io cors
+Then:
+
+// server/index.js
+const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
+const cors = require("cors");
+
+const app = express();
+app.use(cors());
+
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: { origin: "http://localhost:5173" }
+});
+
+server.listen(5000, () => console.log("Server running on port 5000"));
+Q-2
+Inside the same index.js:
+
+io.on("connection", (socket) => {
+  console.log("User connected:", socket.id);
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
+  });
+});
+Q-3
+npm create vite@latest client -- --template react
+cd client
+npm install
+npm install socket.io-client
+Q-4
+
+// client/src/socket.js
+import { io } from "socket.io-client";
+export const socket = io("http://localhost:5000");
+
+// client/src/App.jsx
+import { useEffect } from "react";
+import { socket } from "./socket";
+
+function App() {
+  useEffect(() => {
+    socket.on("connect", () => {
+      console.log("Connected:", socket.id);
+    });
+  }, []);
+
+  return <div>Chat App Connected</div>;
+}
+
+export default App;
+2- Core Chat Functionality
+
+const [username, setUsername] = useState('');
+socket.emit("new-user", username);
+
+// server/index.js
+socket.on("send-message", (data) => {
+  io.emit("receive-message", data); // broadcast to all
+});
+
+// client
+socket.emit("send-message", { user: username, text: message });
+Q: How do I display messages with sender's name and timestamp?
+A:
+
+
+const newMsg = { user: "Alice", text: "Hi", timestamp: new Date().toISOString() };
+Format it on render using toLocaleTimeString().
+
+socket.emit("typing", username);
+socket.on("user-typing", (name) => setTypingUser(name));
+socket.on("new-user", (username) => {
+  io.emit("user-online", username);
+});
+socket.on("disconnect", () => {
+  io.emit("user-offline", username);
+});
+3- Advanced Chat Features
+socket.to(receiverSocketId).emit("private-message", { from, text });
+socket.join("room1");
+socket.to("room1").emit("message", msg);
+Same as earlier: emit typing events scoped to rooms or user.
+Use FormData to upload to server or send base64 via Socket.IO. Examp
+socket.emit("image", { user, base64 });
+
+socket.emit("message-read", messageId);
+Track readBy array in message object.
+
+socket.emit("react", { messageId, reaction: "❤️" });
+Update message's reactions field on server.
+
+4- Real-Time Notifications
+
+socket.emit("notify", { to, message });
+Emit join-room and leave-room events, and broadcast to room.
+
+Track unread messages in state by chat ID and user ID.
+
+Use the browser's Audio API:
+
+new Audio("/message.mp3").play();
+Notification.requestPermission().then(() => {
+  new Notification("New message from Alice");
+});
+5- Performance and UX Optimization
+Q: How do I implement message pagination?
+A:
+Fetch messages in chunks using timestamps or skip/limit from MongoDB.
+
+Socket.IO handles auto-reconnects, but you can use:
+socket.on("reconnect", () => fetchUserData());
+Use namespaces (e.g., /admin) and rooms (e.g., room1) to reduce load and separate logic.
+
+socket.emit("message-delivered", messageId);
+
+Store messages in MongoDB and use regex or full-text search via API.
+
+
+Use responsive CSS (Flexbox/Grid)
+
+Consider mobile UI frameworks (e.g., Tailwind, Material UI)
+
